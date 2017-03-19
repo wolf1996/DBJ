@@ -1,14 +1,14 @@
-package DBPackage.models;
+package DBPackage.views;
 
-import DBPackage.views.UserView;
+import DBPackage.models.UserModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 /**
- * Created by ksg on 11.03.17.
+ * Created by ksg on 10.03.17.
  */
-public class UserModel {
+
+public class UserView {
 
     private String about;
     private String email;
@@ -16,7 +16,7 @@ public class UserModel {
     private String nickname;
 
     @JsonCreator
-    public UserModel(
+    public UserView(
             @JsonProperty("about") final String about,
             @JsonProperty("email") final String email,
             @JsonProperty("fullname") final String fullname,
@@ -28,14 +28,14 @@ public class UserModel {
         this.nickname = nickname;
     }
 
-    public UserModel(final UserModel other) {
-        this.about = other.getAbout();
-        this.email = other.getEmail();
-        this.fullname = other.getFullname();
-        this.nickname = other.getNickname();
+    public UserView(final UserView other) {
+        this.about = other.about;
+        this.email = other.email;
+        this.fullname = other.fullname;
+        this.nickname = other.nickname;
     }
 
-    public UserModel(final UserView other) {
+    public UserView(final UserModel other) {
         this.about = other.getAbout();
         this.email = other.getEmail();
         this.fullname = other.getFullname();
@@ -74,4 +74,3 @@ public class UserModel {
         this.nickname = nickname;
     }
 }
-

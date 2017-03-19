@@ -1,14 +1,13 @@
-package DBPackage.models;
+package DBPackage.views;
 
-import DBPackage.views.PostView;
+import DBPackage.models.PostModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
 /**
- * Created by ksg on 11.03.17.
+ * Created by ksg on 10.03.17.
  */
-public class PostModel {
+public class PostView {
 
     private String author;
     private String created;
@@ -20,7 +19,7 @@ public class PostModel {
     private Integer thread;
 
     @JsonCreator
-    public PostModel(
+    public PostView(
             @JsonProperty("author") final String author,
             @JsonProperty("created") final String created,
             @JsonProperty("forum") final String forum,
@@ -40,26 +39,26 @@ public class PostModel {
         this.thread = thread;
     }
 
-    public PostModel(final PostModel other) {
-        this.author = author;
-        this.created = created;
-        this.forum = forum;
-        this.id = id;
-        this.isEdited = isEdited;
-        this.message = message;
-        this.parent = parent;
-        this.thread = thread;
+    public PostView(final PostView other) {
+        this.author = other.author;
+        this.created = other.created;
+        this.forum = other.forum;
+        this.id = other.id;
+        this.isEdited = other.isEdited;
+        this.message = other.message;
+        this.parent = other.parent;
+        this.thread = other.thread;
     }
 
-    public PostModel(final PostView other) {
-        this.author = other.getAuthor();
-        this.created = other.getCreated();
-        this.forum = other.getForum();
-        this.id = other.getId();
-        this.isEdited = other.getIsEdited();
-        this.message = other.getMessage();
-        this.parent = other.getParent();
-        this.thread = other.getThread();
+    public PostView(final PostModel mdl) {
+        this.author = mdl.getAuthor();
+        this.created = mdl.getCreated();
+        this.forum = mdl.getForum();
+        this.id = mdl.getId();
+        this.isEdited = mdl.getIsEdited();
+        this.message = mdl.getMessage();
+        this.parent = mdl.getParent();
+        this.thread = mdl.getThread();
     }
 
 

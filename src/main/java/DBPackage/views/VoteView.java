@@ -1,19 +1,18 @@
-package DBPackage.models;
+package DBPackage.views;
 
-import DBPackage.views.VoteView;
+import DBPackage.models.VoteModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Created by ksg on 11.03.17.
+ * Created by ksg on 10.03.17.
  */
-
-public class VoteModel {
+public class VoteView {
     private String nickname;
     private Integer voice;
 
     @JsonCreator
-    public VoteModel(
+    public VoteView(
             @JsonProperty("nickname") final String nickname,
             @JsonProperty("voice") final Integer voice
     ) {
@@ -21,12 +20,12 @@ public class VoteModel {
         this.voice = voice;
     }
 
-    public VoteModel(final VoteModel other) {
-        this.nickname = other.getNickname();
-        this.voice = other.getVoice();
+    public VoteView(final VoteView other) {
+        this.nickname = other.nickname;
+        this.voice = other.voice;
     }
 
-    public VoteModel(final VoteView other) {
+    public VoteView(final VoteModel other) {
         this.nickname = other.getNickname();
         this.voice = other.getVoice();
     }

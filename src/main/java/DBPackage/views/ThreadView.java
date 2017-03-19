@@ -1,67 +1,65 @@
-package DBPackage.models;
+package DBPackage.views;
 
-import DBPackage.views.PostView;
+import DBPackage.models.ThreadModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
 /**
- * Created by ksg on 11.03.17.
+ * Created by ksg on 10.03.17.
  */
-public class PostModel {
+public class ThreadView {
 
     private String author;
     private String created;
     private String forum;
     private Integer id;
-    private Boolean isEdited;
     private String message;
-    private Integer parent;
-    private Integer thread;
+    private String slug;
+    private String title;
+    private Integer votes;
 
     @JsonCreator
-    public PostModel(
+    public ThreadView(
             @JsonProperty("author") final String author,
             @JsonProperty("created") final String created,
             @JsonProperty("forum") final String forum,
             @JsonProperty("id") final Integer id,
-            @JsonProperty("isEdited") final Boolean isEdited,
             @JsonProperty("message") final String message,
-            @JsonProperty("parent") final Integer parent,
-            @JsonProperty("thread") final Integer thread
+            @JsonProperty("slug") final String slug,
+            @JsonProperty("title") final String title,
+            @JsonProperty("votes") final Integer votes
     ) {
         this.author = author;
         this.created = created;
         this.forum = forum;
         this.id = id;
-        this.isEdited = isEdited;
         this.message = message;
-        this.parent = parent == null ? 0 : parent;
-        this.thread = thread;
+        this.slug = slug;
+        this.title = title;
+        this.votes = votes;
     }
 
-    public PostModel(final PostModel other) {
-        this.author = author;
-        this.created = created;
-        this.forum = forum;
-        this.id = id;
-        this.isEdited = isEdited;
-        this.message = message;
-        this.parent = parent;
-        this.thread = thread;
+    public ThreadView(final ThreadView other) {
+        this.author = other.author;
+        this.created = other.created;
+        this.forum = other.forum;
+        this.id = other.id;
+        this.message = other.message;
+        this.slug = other.slug;
+        this.title = other.title;
+        this.votes = other.votes;
     }
 
-    public PostModel(final PostView other) {
+    public ThreadView(final ThreadModel other) {
         this.author = other.getAuthor();
         this.created = other.getCreated();
         this.forum = other.getForum();
         this.id = other.getId();
-        this.isEdited = other.getIsEdited();
         this.message = other.getMessage();
-        this.parent = other.getParent();
-        this.thread = other.getThread();
+        this.slug = other.getSlug();
+        this.title = other.getTitle();
+        this.votes = other.getVotes();
     }
-
 
     public final String getAuthor() {
         return this.author;
@@ -95,14 +93,6 @@ public class PostModel {
         this.id = id;
     }
 
-    public final Boolean getIsEdited() {
-        return this.isEdited;
-    }
-
-    public void setIsEdited(final Boolean isEdited) {
-        this.isEdited = isEdited;
-    }
-
     public final String getMessage() {
         return this.message;
     }
@@ -111,19 +101,27 @@ public class PostModel {
         this.message = message;
     }
 
-    public final Integer getParent() {
-        return this.parent;
+    public final String getSlug() {
+        return this.slug;
     }
 
-    public void setParent(final Integer parent) {
-        this.parent = parent;
+    public void setSlug(final String slug) {
+        this.slug = slug;
     }
 
-    public final Integer getThread() {
-        return this.thread;
+    public final String getTitle() {
+        return this.title;
     }
 
-    public void setThread(final Integer thread) {
-        this.thread = thread;
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
+    public final Integer getVotes() {
+        return this.votes;
+    }
+
+    public void setVotes(final Integer votes) {
+        this.votes = votes;
     }
 }

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Created by lieroz on 8.03.17.
+ * Created by ksg on 11.03.17.
  */
 
 public class PostsMarkerView {

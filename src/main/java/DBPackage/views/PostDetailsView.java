@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Created by lieroz on 4.03.17.
+ * Created by ksg on 11.03.17.
  */
 
 public class PostDetailsView {

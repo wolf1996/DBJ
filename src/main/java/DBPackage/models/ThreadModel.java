@@ -4,11 +4,13 @@ import DBPackage.views.ThreadView;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Comparator;
+
 /**
  * Created by ksg on 11.03.17.
  */
 
-public class ThreadModel {
+public class ThreadModel{
 
     private String author;
     private String created;
@@ -125,4 +127,5 @@ public class ThreadModel {
     public void setVotes(final Integer votes) {
         this.votes = votes;
     }
+
 }

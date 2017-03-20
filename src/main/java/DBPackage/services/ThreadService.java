@@ -70,7 +70,8 @@ public class ThreadService {
 
     public final List<PostModel> insertPostsIntoDbModel(final List<PostModel> posts, final String slug) {
         final StringBuilder[] requests = makeRequests(slug);
-
+        final String created = LocalDateTime.now().toString();
+        final Timestamp timestamp = Timestamp.valueOf(LocalDateTime.parse(created, DateTimeFormatter.ISO_DATE_TIME));
         for (PostModel post : posts) {
 
             if (post.getParent() != 0) {
@@ -84,17 +85,6 @@ public class ThreadService {
                     throw new DuplicateKeyException(null);
                 }
             }
-
-            if (post.getCreated() == null) {
-                post.setCreated(LocalDateTime.now().toString());
-            }
-
-            Timestamp timestamp = Timestamp.valueOf(LocalDateTime.parse(post.getCreated(), DateTimeFormatter.ISO_DATE_TIME));
-
-            if (!post.getCreated().endsWith("Z")) {
-                timestamp = Timestamp.from(timestamp.toInstant().plusSeconds(-10800));
-            }
-
             jdbcTemplate.update(requests[0].toString(), post.getAuthor(), timestamp, isNumber ? id : slug,
                     post.getMessage(), isNumber ? id : slug, post.getParent());
         }
@@ -301,7 +291,7 @@ public class ThreadService {
             isNumber = Boolean.TRUE;
 
             if (Objects.equals(sort, "flat")) {
-                sql.append(sqlTemplate + " ORDER BY posts.created");
+                sql.append(sqlTemplate + " ORDER BY created");
 
             } else {
                 sql.append("WITH RECURSIVE some_threads AS (" + sqlTemplate + "), " + recurseTemplate);
@@ -312,7 +302,7 @@ public class ThreadService {
                     "(SELECT threads.id FROM threads WHERE LOWER(threads.slug) = LOWER(?))";
 
             if (Objects.equals(sort, "flat")) {
-                sql.append(sqlTemplate + " ORDER BY posts.created");
+                sql.append(sqlTemplate + " ORDER BY created");
 
             } else {
                 sql.append("WITH RECURSIVE some_threads AS (" + sqlTemplate + "), " + recurseTemplate);
@@ -321,6 +311,12 @@ public class ThreadService {
 
         if (desc == Boolean.TRUE) {
             sql.append(" DESC");
+        }
+        if (Objects.equals(sort, "flat")) {
+            sql.append(", posts.id");
+            if (desc == Boolean.TRUE) {
+                sql.append(" DESC");
+            }
         }
 
         return jdbcTemplate.query(
@@ -333,6 +329,8 @@ public class ThreadService {
 
     public static ThreadModel read(ResultSet rs, int rowNum) throws SQLException {
         final Timestamp timestamp = rs.getTimestamp("created");
+        //DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+        //final SimpleDateFormat dateFormat = new SimpleDateFormat(formatter.toString());
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 //        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+03:00"));
 

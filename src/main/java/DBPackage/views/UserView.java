@@ -1,6 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.UserModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -33,13 +32,6 @@ public class UserView {
         this.email = other.email;
         this.fullname = other.fullname;
         this.nickname = other.nickname;
-    }
-
-    public UserView(final UserModel other) {
-        this.about = other.getAbout();
-        this.email = other.getEmail();
-        this.fullname = other.getFullname();
-        this.nickname = other.getNickname();
     }
 
     public final String getAbout() {

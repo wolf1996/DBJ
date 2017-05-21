@@ -1,7 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.PostModel;
-import DBPackage.models.PostModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -12,13 +10,13 @@ import java.util.List;
  */
 
 public class PostsMarkerView {
-    private List<PostModel> posts;
+    private List<PostView> posts;
     private String marker;
 
     @JsonCreator
     public PostsMarkerView(
             @JsonProperty("marker") final String marker,
-            @JsonProperty("posts") final List<PostModel> posts
+            @JsonProperty("posts") final List<PostView> posts
     ) {
         this.marker = marker == null ? "some marker" : marker;
         this.posts = posts;
@@ -31,11 +29,11 @@ public class PostsMarkerView {
         this.posts = other.posts;
     }
 
-    public final List<PostModel> getPosts() {
+    public final List<PostView> getPosts() {
         return this.posts;
     }
 
-    public void setPosts(final List<PostModel> posts) {
+    public void setPosts(final List<PostView> posts) {
         this.posts = posts;
     }
 

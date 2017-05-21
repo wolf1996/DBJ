@@ -1,6 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.PostModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -48,17 +47,6 @@ public class PostView {
         this.message = other.message;
         this.parent = other.parent;
         this.thread = other.thread;
-    }
-
-    public PostView(final PostModel mdl) {
-        this.author = mdl.getAuthor();
-        this.created = mdl.getCreated();
-        this.forum = mdl.getForum();
-        this.id = mdl.getId();
-        this.isEdited = mdl.getIsEdited();
-        this.message = mdl.getMessage();
-        this.parent = mdl.getParent();
-        this.thread = mdl.getThread();
     }
 
 

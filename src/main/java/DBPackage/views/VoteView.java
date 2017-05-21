@@ -1,6 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.VoteModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -23,11 +22,6 @@ public class VoteView {
     public VoteView(final VoteView other) {
         this.nickname = other.nickname;
         this.voice = other.voice;
-    }
-
-    public VoteView(final VoteModel other) {
-        this.nickname = other.getNickname();
-        this.voice = other.getVoice();
     }
 
     public final String getNickname() {

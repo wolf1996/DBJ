@@ -1,6 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.ForumModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -30,14 +29,6 @@ public class ForumView {
         this.threads = threads;
         this.title = title;
         this.user = user;
-    }
-
-    public ForumView(final ForumModel other) {
-        this.posts = other.getPosts();
-        this.slug = other.getSlug();
-        this.threads = other.getThreads();
-        this.title = other.getTitle();
-        this.user = other.getUser();
     }
 
     public ForumView(final ForumView other) {

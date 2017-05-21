@@ -1,7 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.*;
-import DBPackage.models.ForumModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -10,17 +8,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 
 public class PostDetailsView {
-    private UserModel author;
-    private ForumModel forum;
-    private PostModel post;
-    private ThreadModel thread;
+    private UserView author;
+    private ForumView forum;
+    private PostView post;
+    private ThreadView thread;
 
     @JsonCreator
     public PostDetailsView(
-            @JsonProperty("author") final UserModel author,
-            @JsonProperty("forum") final ForumModel forum,
-            @JsonProperty("post") final PostModel post,
-            @JsonProperty("thread") final ThreadModel thread
+            @JsonProperty("author") final UserView author,
+            @JsonProperty("forum") final ForumView forum,
+            @JsonProperty("post") final PostView post,
+            @JsonProperty("thread") final ThreadView thread
     ) {
         this.author = author;
         this.forum = forum;
@@ -35,35 +33,35 @@ public class PostDetailsView {
         this.thread = other.thread;
     }
 
-    public final UserModel getAuthor() {
+    public final UserView getAuthor() {
         return this.author;
     }
 
-    public void setAuthor(final UserModel author) {
+    public void setAuthor(final UserView author) {
         this.author = author;
     }
 
-    public final ForumModel getForum() {
+    public final ForumView getForum() {
         return this.forum;
     }
 
-    public void setForum(ForumModel forum) {
+    public void setForum(ForumView forum) {
         this.forum = forum;
     }
 
-    public final PostModel getPost() {
+    public final PostView getPost() {
         return this.post;
     }
 
-    public void setPost(PostModel post) {
+    public void setPost(PostView post) {
         this.post = post;
     }
 
-    public final ThreadModel getThread() {
+    public final ThreadView getThread() {
         return this.thread;
     }
 
-    public void setThread(ThreadModel thread) {
+    public void setThread(ThreadView thread) {
         this.thread = thread;
     }
 }

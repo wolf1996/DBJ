@@ -1,10 +1,9 @@
 package DBPackage.controllers;
 
-import DBPackage.models.*;
-import DBPackage.models.ServiceModel;
+import DBPackage.views.PostView;
 import DBPackage.views.PostsMarkerView;
-import DBPackage.models.VoteModel;
-import DBPackage.services.ThreadService;
+import DBPackage.views.ThreadView;
+import DBPackage.views.VoteView;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -21,60 +20,58 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping(value = "/api/thread/{slug}")
-public class ThreadController {
-    private final ThreadService service;
-
-    public ThreadController(final ThreadService service) {
-        this.service = service;
-    }
+public class ThreadController extends BaseController{
 
     @RequestMapping(value = "/create",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<List<PostModel>> createPosts(
-            @RequestBody final List<PostModel> posts,
+    public final ResponseEntity<List<PostView>> createPosts(
+            @RequestBody final List<PostView> posts,
             @PathVariable(value = "slug") final String slug
     ) {
-        final List<PostModel> dbPosts;
-
         try {
-
+            ThreadView thread = this.thread.getByIdOrSlug(slug);
             if (posts.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
-
-            dbPosts = service.insertPostsIntoDbModel(posts, slug);
-
+            for (PostView post : posts) {
+                if (post.getParent() != 0) {
+                    try {
+                        PostView parent = this.post.getById(post.getParent());
+                        post.setForum(thread.getForum());
+                        post.setThread(thread.getId());
+                        if (!thread.getId().equals(parent.getThread())) {
+                            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                        }
+                    } catch (EmptyResultDataAccessException ex) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                    }
+                }
+                post.setForum(thread.getForum());
+                post.setThread(thread.getId());
+            }
+            post.create(posts, slug);
         } catch (DuplicateKeyException ex) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(dbPosts, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(posts);
     }
 
 
     @RequestMapping(value = "/details", produces = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<ThreadModel> viewThread(
+    public final ResponseEntity<ThreadView> viewThread(
             @PathVariable(value = "slug") final String slug
     ) {
-        final List<ThreadModel> threads;
-
+        final ThreadView thread;
         try {
-            threads = service.getThreadInfoModel(slug);
-
-            if (threads.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
-            }
-
+            thread = this.thread.getByIdOrSlug(slug);
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(threads.get(0), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
 
@@ -82,28 +79,19 @@ public class ThreadController {
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<ThreadModel> updateThread(
-            @RequestBody final ThreadModel thread,
+    public final ResponseEntity<ThreadView> updateThread(
+            @RequestBody ThreadView thread,
             @PathVariable(value = "slug") final String slug
     ) {
-        final List<ThreadModel> threads;
-
         try {
-            service.updateThreadInfoFromDb(thread, slug);
-            threads = service.getThreadInfoModel(slug);
-
-            if (threads.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
-            }
-
+            this.thread.update(thread.getMessage(), thread.getTitle(), slug);
+            thread = this.thread.getByIdOrSlug(slug);
         } catch (DuplicateKeyException ex) {
-            return new ResponseEntity<>(service.getThreadInfoModel(slug).get(0), HttpStatus.CONFLICT);
-
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getByIdOrSlug(slug));
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(threads.get(0), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
 
@@ -111,27 +99,19 @@ public class ThreadController {
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<ThreadModel> voteForThread(
-            @RequestBody final VoteModel vote,
+    public final ResponseEntity<ThreadView> voteForThread(
+            @RequestBody final VoteView vote,
             @PathVariable("slug") final String slug
     ) {
-        final List<ThreadModel> threads;
-
+        final ThreadView thread;
         try {
-            threads = service.updateVotesModel(vote, slug);
-
-            if (threads.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
-            }
-
+            thread = this.thread.updateVotes(vote, slug);
         } catch (DuplicateKeyException ex) {
-            return new ResponseEntity<>(service.getThreadInfoModel(slug).get(0), HttpStatus.CONFLICT);
-
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getByIdOrSlug(slug));
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(threads.get(0), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
     private static Integer markerValue = 0;
@@ -139,59 +119,19 @@ public class ThreadController {
     @RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
     public final ResponseEntity<PostsMarkerView> viewThreads(
             @RequestParam(value = "limit", required = false, defaultValue = "100") final Integer limit,
-            @RequestParam(value = "marker", required = false) final String marker,
+            @RequestParam(value = "marker", required = false) String marker,
             @RequestParam(value = "sort", required = false, defaultValue = "flat") final String sort,
-            @RequestParam(value = "desc", required = false) final Boolean desc,
+            @RequestParam(value = "desc", required = false, defaultValue = "false") final Boolean desc,
             @PathVariable("slug") final String slug
     ) {
-        final List<PostModel> posts = service.getPostsSortedModel(sort, desc, slug);
-
-        if (posts.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (marker == null) {
+            marker = "0";
         }
-
-        markerValue += marker != null && !Objects.equals(sort, "parent_tree") ? limit : 0;
-
-        if (Objects.equals(sort, "parent_tree")) {
-
-            if (markerValue >= posts.size() && marker != null) {
-                markerValue = 0;
-
-                return new ResponseEntity<>(new PostsMarkerView(marker, new ArrayList<>()), HttpStatus.OK);
-
-            } else if (markerValue == posts.size()) {
-                markerValue = 0;
-            }
-
-            Integer zeroCount = 0, counter = 0;
-
-            for (PostModel post : posts.subList(markerValue, posts.size())) {
-
-                if (zeroCount.equals(limit) && desc == Boolean.TRUE) {
-                    break;
-
-                } else if (zeroCount.equals(limit + 1) && (desc == Boolean.FALSE || desc == null)) {
-                    --counter;
-                    break;
-                }
-
-                zeroCount += post.getParent().equals(0) ? 1 : 0;
-                ++counter;
-            }
-
-            return new ResponseEntity<>(new PostsMarkerView(marker,
-                    posts.subList(markerValue, markerValue += counter)), HttpStatus.OK);
+        final List<PostView> posts = this.post.sort(limit, Integer.parseInt(marker), sort, desc, slug);
+        if (posts.isEmpty() && marker.equals("0")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        if (markerValue > posts.size()) {
-            markerValue = 0;
-
-            return new ResponseEntity<>(new PostsMarkerView(marker, new ArrayList<>()), HttpStatus.OK);
-        }else if (markerValue == posts.size()) {
-            markerValue = 0;
-        }
-
-        return new ResponseEntity<>(new PostsMarkerView(marker, posts.subList(markerValue,
-                limit + markerValue > posts.size() ? posts.size() : limit + markerValue)), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(new PostsMarkerView(
+                !posts.isEmpty() ? String.valueOf(Integer.parseInt(marker) + limit) : marker, posts));
     }
 }

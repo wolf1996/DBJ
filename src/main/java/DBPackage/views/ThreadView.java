@@ -1,6 +1,5 @@
 package DBPackage.views;
 
-import DBPackage.models.ThreadModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -48,17 +47,6 @@ public class ThreadView {
         this.slug = other.slug;
         this.title = other.title;
         this.votes = other.votes;
-    }
-
-    public ThreadView(final ThreadModel other) {
-        this.author = other.getAuthor();
-        this.created = other.getCreated();
-        this.forum = other.getForum();
-        this.id = other.getId();
-        this.message = other.getMessage();
-        this.slug = other.getSlug();
-        this.title = other.getTitle();
-        this.votes = other.getVotes();
     }
 
     public final String getAuthor() {

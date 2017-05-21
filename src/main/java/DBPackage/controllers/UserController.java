@@ -1,7 +1,6 @@
 package DBPackage.controllers;
 
-import DBPackage.models.UserModel;
-import DBPackage.services.UserService;
+import DBPackage.views.UserView;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -19,84 +18,57 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/user/{nickname}")
-public final class UserController {
-
-    private final UserService service;
-
-    public UserController(final UserService service) {
-        this.service = service;
-    }
+public final class UserController extends BaseController{
 
     @RequestMapping(value = "/create",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public final ResponseEntity<Object> createUser(
-            @RequestBody UserModel user,
+            @RequestBody UserView user,
             @PathVariable(value = "nickname") String nickname
     ) {
-        user.setNickname(nickname);
-
         try {
-            service.insertUserIntoDb(user);
-
+            this.user.create(user.getAbout(), user.getEmail(), user.getFullname(), nickname);
         } catch (DuplicateKeyException ex) {
-            return new ResponseEntity<>(service.getUserFromDb(user), HttpStatus.CONFLICT);
-
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(this.user.findManyByNickOrMail(nickname, user.getEmail()));
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(new UserModel(user), HttpStatus.CREATED);
+        user.setNickname(nickname);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @RequestMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<UserModel> viewProfile(
+    public final ResponseEntity<UserView> viewProfile(
             @PathVariable(value = "nickname") String nickname
     ) {
-        final List<UserModel> users;
-
+        final UserView user;
         try {
-            users = service.getUserFromDbModel(new UserModel(null, null, null, nickname));
-
-            if (users.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
-            }
-
+            user = this.user.findSingleByNickOrMail(nickname, null);
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(users.get(0), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
     @RequestMapping(value = "/profile",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<UserModel> modifyProfile(
-            @RequestBody UserModel user,
+    public final ResponseEntity<UserView> modifyProfile(
+            @RequestBody UserView user,
             @PathVariable(value = "nickname") String nickname
     ) {
-        user.setNickname(nickname);
-
         try {
-            service.updateUserInfoFromDb(user);
-            final List<UserModel> users = service.getUserFromDbModel(user);
-
-            if (users.isEmpty()) {
-                throw new EmptyResultDataAccessException(0);
-            }
-
-            user = users.get(0);
-
+            this.user.update(user.getAbout(), user.getEmail(), user.getFullname(), nickname);
+            user = this.user.findSingleByNickOrMail(nickname, user.getEmail());
         } catch (DuplicateKeyException ex) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
-
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (DataAccessException ex) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-
-        return new ResponseEntity<>(new UserModel(user), HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 }

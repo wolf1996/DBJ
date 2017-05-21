@@ -1,11 +1,8 @@
 package DBPackage.controllers;
 
-import DBPackage.services.ServiceService;
-import DBPackage.models.ServiceModel;
-import DBPackage.models.ServiceModel;
+import DBPackage.views.StatusView;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,20 +11,23 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/service")
-class ServiceController {
-    private final ServiceService service;
-
-    public ServiceController(final ServiceService service) {
-        this.service = service;
-    }
+class ServiceController extends BaseController {
 
     @RequestMapping("/status")
     public final ResponseEntity<Object> serverStatus() {
-        return service.serverStatus();
+        final Integer forumsCount = forum.countForums();
+        final Integer postsCount = post.countPost();
+        final Integer threadsCount = thread.count();
+        final Integer usersCount = user.count();
+        return ResponseEntity.status(HttpStatus.OK).body(new StatusView(forumsCount, postsCount, threadsCount, usersCount));
     }
 
     @RequestMapping("/clear")
     public final ResponseEntity<Object> clearService() {
-        return service.clearService();
+        post.clear();
+        thread.clear();
+        forum.clear();
+        user.clear();
+        return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Created by ksg on 10.03.17.
  */
@@ -26,38 +28,43 @@ public class ThreadController extends BaseController{
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<List<PostView>> createPosts(
+    public final CompletableFuture<ResponseEntity<List<PostView>>> createPosts(
             @RequestBody final List<PostView> posts,
             @PathVariable(value = "slug") final String slug
     ) {
-        try {
-            ThreadView thread = this.thread.getByIdOrSlug(slug);
-            if (posts.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            for (PostView post : posts) {
-                if (post.getParent() != 0) {
-                    try {
-                        PostView parent = this.post.getById(post.getParent());
-                        post.setForum(thread.getForum());
-                        post.setThread(thread.getId());
-                        if (!thread.getId().equals(parent.getThread())) {
-                            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-                        }
-                    } catch (EmptyResultDataAccessException ex) {
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-                    }
-                }
-                post.setForum(thread.getForum());
-                post.setThread(thread.getId());
-            }
-            post.create(posts, slug);
-        } catch (DuplicateKeyException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(posts);
+        final CompletableFuture<ResponseEntity<List<PostView>>> ent = CompletableFuture.
+                supplyAsync
+                        (() -> {
+                            try {
+                                ThreadView thread = this.thread.getByIdOrSlug(slug);
+                                if (posts.isEmpty()) {
+                                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                                }
+                                for (PostView post : posts) {
+                                    if (post.getParent() != 0) {
+                                        try {
+                                            PostView parent = this.post.getById(post.getParent());
+                                            post.setForum(thread.getForum());
+                                            post.setThread(thread.getId());
+                                            if (!thread.getId().equals(parent.getThread())) {
+                                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                                            }
+                                        } catch (EmptyResultDataAccessException ex) {
+                                            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                                        }
+                                    }
+                                    post.setForum(thread.getForum());
+                                    post.setThread(thread.getId());
+                                }
+                                post.create(posts, slug);
+                            } catch (DuplicateKeyException ex) {
+                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                            } catch (DataAccessException ex) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                            }
+                            return ResponseEntity.status(HttpStatus.CREATED).body(posts);
+                        });
+        return ent;
     }
 
 

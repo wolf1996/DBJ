@@ -1,3 +1,4 @@
+
 DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS threads CASCADE;
 DROP TABLE IF EXISTS forums CASCADE;
@@ -11,6 +12,9 @@ DROP INDEX IF EXISTS threads_forum_id_idx;
 DROP INDEX IF EXISTS posts_user_id_idx;
 DROP INDEX IF EXISTS posts_forum_id_idx;
 DROP INDEX IF EXISTS posts_thread_id_idx;
+DROP INDEX IF EXISTS posts_path_thread_id_idx;
+DROP INDEX IF EXISTS posts_path_help_idx;
+DROP INDEX IF EXISTS posts_multi_idx;
 DROP INDEX IF EXISTS forum_users_user_id_idx;
 DROP INDEX IF EXISTS forum_users_forum_id_idx;
 
@@ -70,6 +74,12 @@ CREATE INDEX IF NOT EXISTS posts_forum_id_idx
   ON posts (forum_id);
 CREATE INDEX IF NOT EXISTS posts_thread_id_idx
   ON posts (thread_id);
+CREATE INDEX IF NOT EXISTS posts_path_thread_id_idx
+  ON posts (thread_id, path);
+CREATE INDEX IF NOT EXISTS posts_path_help_idx
+  ON posts ((path [1]), path);
+CREATE INDEX IF NOT EXISTS posts_multi_idx
+  ON posts (thread_id, parent, id);
 
 CREATE TABLE IF NOT EXISTS forum_users (
   user_id  INTEGER REFERENCES users (id) ON DELETE CASCADE,
@@ -95,11 +105,11 @@ END;
 ' LANGUAGE plpgsql;
 
 
-CREATE TRIGGER IF NOT EXISTS post_insert_trigger
+CREATE TRIGGER post_insert_trigger
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
 
-CREATE TRIGGER IF NOT EXISTS thread_insert_trigger
+CREATE TRIGGER thread_insert_trigger
 AFTER INSERT ON threads
 FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
 

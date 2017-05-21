@@ -1,18 +1,22 @@
--- DROP TABLE IF EXISTS posts CASCADE;
--- DROP TABLE IF EXISTS threads CASCADE;
--- DROP TABLE IF EXISTS forums CASCADE;
--- DROP TABLE IF EXISTS users CASCADE;
--- DROP TABLE IF EXISTS forum_users CASCADE;
--- DROP TABLE IF EXISTS votes CASCADE;
---
--- DROP INDEX IF EXISTS forums_user_id_idx;
--- DROP INDEX IF EXISTS threads_user_id_idx;
--- DROP INDEX IF EXISTS threads_forum_id_idx;
--- DROP INDEX IF EXISTS posts_user_id_idx;
--- DROP INDEX IF EXISTS posts_forum_id_idx;
--- DROP INDEX IF EXISTS posts_thread_id_idx;
--- DROP INDEX IF EXISTS forum_users_user_id_idx;
--- DROP INDEX IF EXISTS forum_users_forum_id_idx;
+
+DROP TABLE IF EXISTS posts CASCADE;
+DROP TABLE IF EXISTS threads CASCADE;
+DROP TABLE IF EXISTS forums CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS forum_users CASCADE;
+DROP TABLE IF EXISTS votes CASCADE;
+
+DROP INDEX IF EXISTS forums_user_id_idx;
+DROP INDEX IF EXISTS threads_user_id_idx;
+DROP INDEX IF EXISTS threads_forum_id_idx;
+DROP INDEX IF EXISTS posts_user_id_idx;
+DROP INDEX IF EXISTS posts_forum_id_idx;
+DROP INDEX IF EXISTS posts_thread_id_idx;
+DROP INDEX IF EXISTS posts_path_thread_id_idx;
+DROP INDEX IF EXISTS posts_path_help_idx;
+DROP INDEX IF EXISTS posts_multi_idx;
+DROP INDEX IF EXISTS forum_users_user_id_idx;
+DROP INDEX IF EXISTS forum_users_forum_id_idx;
 
 CREATE EXTENSION IF NOT EXISTS CITEXT;
 
@@ -70,6 +74,12 @@ CREATE INDEX IF NOT EXISTS posts_forum_id_idx
   ON posts (forum_id);
 CREATE INDEX IF NOT EXISTS posts_thread_id_idx
   ON posts (thread_id);
+CREATE INDEX IF NOT EXISTS posts_path_thread_id_idx
+  ON posts (thread_id, path);
+CREATE INDEX IF NOT EXISTS posts_path_help_idx
+  ON posts ((path [1]), path);
+CREATE INDEX IF NOT EXISTS posts_multi_idx
+  ON posts (thread_id, parent, id);
 
 CREATE TABLE IF NOT EXISTS forum_users (
   user_id  INTEGER REFERENCES users (id) ON DELETE CASCADE,
@@ -81,55 +91,55 @@ CREATE INDEX IF NOT EXISTS forum_users_user_id_idx
 CREATE INDEX IF NOT EXISTS forum_users_forum_id_idx
   ON forum_users (forum_id);
 
--- CREATE OR REPLACE FUNCTION on_insert_post_or_thread()
---   RETURNS TRIGGER AS '
--- BEGIN
---   IF NOT EXISTS(SELECT *
---                 FROM forum_users
---                 WHERE forum_id = NEW.forum_id AND user_id = NEW.user_id)
---   THEN
---     INSERT INTO forum_users (user_id, forum_id) VALUES (NEW.user_id, NEW.forum_id);
---   END IF;
---   RETURN NEW;
--- END;
--- ' LANGUAGE plpgsql;
---
---
--- CREATE TRIGGER IF NOT EXISTS post_insert_trigger
--- AFTER INSERT ON posts
--- FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
---
--- CREATE TRIGGER IF NOT EXISTS thread_insert_trigger
--- AFTER INSERT ON threads
--- FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
---
--- CREATE TABLE IF NOT EXISTS votes (
---   user_id   INTEGER REFERENCES users (id) ON DELETE CASCADE,
---   thread_id INTEGER REFERENCES threads (id) ON DELETE CASCADE,
---   voice     INTEGER DEFAULT 0
--- );
---
--- CREATE OR REPLACE FUNCTION update_or_insert_votes(u_id INTEGER, t_id INTEGER, v INTEGER)
---   RETURNS VOID AS '
--- DECLARE
---   count INTEGER;
--- BEGIN
---   SELECT COUNT(*)
---   FROM votes
---   WHERE user_id = u_id AND thread_id = t_id
---   INTO count;
---   IF count > 0
---   THEN
---     UPDATE votes
---     SET voice = v
---     WHERE user_id = u_id AND thread_id = t_id;
---   ELSE
---     INSERT INTO votes (user_id, thread_id, voice) VALUES (u_id, t_id, v);
---   END IF;
---   UPDATE threads
---   SET votes = (SELECT SUM(voice)
---                FROM votes
---                WHERE thread_id = t_id)
---   WHERE id = t_id;
--- END;
--- ' LANGUAGE plpgsql
+CREATE OR REPLACE FUNCTION on_insert_post_or_thread()
+  RETURNS TRIGGER AS '
+BEGIN
+  IF NOT EXISTS(SELECT *
+                FROM forum_users
+                WHERE forum_id = NEW.forum_id AND user_id = NEW.user_id)
+  THEN
+    INSERT INTO forum_users (user_id, forum_id) VALUES (NEW.user_id, NEW.forum_id);
+  END IF;
+  RETURN NEW;
+END;
+' LANGUAGE plpgsql;
+
+
+CREATE TRIGGER post_insert_trigger
+AFTER INSERT ON posts
+FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
+
+CREATE TRIGGER thread_insert_trigger
+AFTER INSERT ON threads
+FOR EACH ROW EXECUTE PROCEDURE on_insert_post_or_thread();
+
+CREATE TABLE IF NOT EXISTS votes (
+  user_id   INTEGER REFERENCES users (id) ON DELETE CASCADE,
+  thread_id INTEGER REFERENCES threads (id) ON DELETE CASCADE,
+  voice     INTEGER DEFAULT 0
+);
+
+CREATE OR REPLACE FUNCTION update_or_insert_votes(u_id INTEGER, t_id INTEGER, v INTEGER)
+  RETURNS VOID AS '
+DECLARE
+  count INTEGER;
+BEGIN
+  SELECT COUNT(*)
+  FROM votes
+  WHERE user_id = u_id AND thread_id = t_id
+  INTO count;
+  IF count > 0
+  THEN
+    UPDATE votes
+    SET voice = v
+    WHERE user_id = u_id AND thread_id = t_id;
+  ELSE
+    INSERT INTO votes (user_id, thread_id, voice) VALUES (u_id, t_id, v);
+  END IF;
+  UPDATE threads
+  SET votes = (SELECT SUM(voice)
+               FROM votes
+               WHERE thread_id = t_id)
+  WHERE id = t_id;
+END;
+' LANGUAGE plpgsql

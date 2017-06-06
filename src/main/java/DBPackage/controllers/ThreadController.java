@@ -15,56 +15,45 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Created by ksg on 10.03.17.
  */
 @RestController
 @RequestMapping(value = "/api/thread/{slug}")
-public class ThreadController extends BaseController{
-
+public class ThreadController extends BaseController {
     @RequestMapping(value = "/create",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public final CompletableFuture<ResponseEntity<List<PostView>>> createPosts(
+    public final ResponseEntity<List<PostView>> createPosts(
             @RequestBody final List<PostView> posts,
             @PathVariable(value = "slug") final String slug
     ) {
-        final CompletableFuture<ResponseEntity<List<PostView>>> ent = CompletableFuture.
-                supplyAsync
-                        (() -> {
-                            try {
-                                ThreadView thread = this.thread.getByIdOrSlug(slug);
-                                if (posts.isEmpty()) {
-                                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-                                }
-                                for (PostView post : posts) {
-                                    if (post.getParent() != 0) {
-                                        try {
-                                            PostView parent = this.post.getById(post.getParent());
-                                            post.setForum(thread.getForum());
-                                            post.setThread(thread.getId());
-                                            if (!thread.getId().equals(parent.getThread())) {
-                                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-                                            }
-                                        } catch (EmptyResultDataAccessException ex) {
-                                            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-                                        }
-                                    }
-                                    post.setForum(thread.getForum());
-                                    post.setThread(thread.getId());
-                                }
-                                post.create(posts, slug);
-                            } catch (DuplicateKeyException ex) {
-                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-                            } catch (DataAccessException ex) {
-                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-                            }
-                            return ResponseEntity.status(HttpStatus.CREATED).body(posts);
-                        });
-        return ent;
+        try {
+            ThreadView thread = this.thread.getThread(slug);
+            if (posts.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            for (PostView post : posts) {
+                if (post.getParent() != 0) {
+                    try {
+                        PostView parent = this.post.getPostById(post.getParent());
+                        if (!thread.getId().equals(parent.getThread())) {
+                            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                        }
+                    } catch (EmptyResultDataAccessException ex) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                    }
+                }
+                post.setForum(thread.getForum());
+                post.setThread(thread.getId());
+            }
+            post.insertPostsPack(posts, slug);
+        } catch (DuplicateKeyException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(posts);
     }
 
 
@@ -72,12 +61,7 @@ public class ThreadController extends BaseController{
     public final ResponseEntity<ThreadView> viewThread(
             @PathVariable(value = "slug") final String slug
     ) {
-        final ThreadView thread;
-        try {
-            thread = this.thread.getByIdOrSlug(slug);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+        final ThreadView thread = this.thread.getThread(slug);
         return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
@@ -91,12 +75,10 @@ public class ThreadController extends BaseController{
             @PathVariable(value = "slug") final String slug
     ) {
         try {
-            this.thread.update(thread.getMessage(), thread.getTitle(), slug);
-            thread = this.thread.getByIdOrSlug(slug);
+            this.thread.updateThread(thread.getMessage(), thread.getTitle(), slug);
+            thread = this.thread.getThread(slug);
         } catch (DuplicateKeyException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getByIdOrSlug(slug));
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getThread(slug));
         }
         return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
@@ -114,27 +96,22 @@ public class ThreadController extends BaseController{
         try {
             thread = this.thread.updateVotes(vote, slug);
         } catch (DuplicateKeyException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getByIdOrSlug(slug));
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getThread(slug));
         }
         return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
-    private static Integer markerValue = 0;
-
     @RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public final ResponseEntity<PostsMarkerView> viewThreads(
+    public ResponseEntity<PostsMarkerView> viewThreads(
             @RequestParam(value = "limit", required = false, defaultValue = "100") final Integer limit,
             @RequestParam(value = "marker", required = false) String marker,
             @RequestParam(value = "sort", required = false, defaultValue = "flat") final String sort,
             @RequestParam(value = "desc", required = false, defaultValue = "false") final Boolean desc,
-            @PathVariable("slug") final String slug
-    ) {
+            @PathVariable("slug") final String slug_or_id) {
         if (marker == null) {
             marker = "0";
         }
-        final List<PostView> posts = this.post.sort(limit, Integer.parseInt(marker), sort, desc, slug);
+        final List<PostView> posts = this.post.sortPosts(limit, Integer.parseInt(marker), sort, desc, slug_or_id);
         if (posts.isEmpty() && marker.equals("0")) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }

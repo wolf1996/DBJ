@@ -5,10 +5,12 @@ import DBPackage.models.interfaces.Post;
 import DBPackage.models.interfaces.User;
 import DBPackage.models.interfaces.Thread;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by ksg on 20.05.17.
@@ -24,5 +26,11 @@ public class BaseController {
     protected Thread thread;
     @Autowired
     protected Post post;
-    protected final ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+    @ExceptionHandler(DataAccessException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public void handleDataAccessException(DataAccessException e) {
+
+    }
 }

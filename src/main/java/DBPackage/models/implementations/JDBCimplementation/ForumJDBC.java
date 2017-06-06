@@ -13,48 +13,54 @@ import java.util.List;
  */
 
 @Service
-public class ForumJDBC extends BaseJDBC implements Forum{
-    static class ForumQueries{
-        static final String createForumQuery = "INSERT INTO forums (user_id, slug, title)"+
+public class ForumJDBC extends BaseJDBC implements Forum {
+    static class ForumSQL {
+        static final String insertForumSQL = "INSERT INTO forums (user_id, slug, title)" +
                 " VALUES((SELECT id FROM users WHERE nickname = ?), ?, ?)";
-        static final String getForumQuery = "SELECT f.posts, f.slug, f.threads, f.title, u.nickname " +
+
+        static final String getForumSQL = "SELECT f.posts, f.slug, f.threads, f.title, u.nickname " +
                 "FROM forums f " +
                 "  JOIN users u ON (f.user_id = u.id)" +
                 "  WHERE f.slug = ?";
-        static final String updateThreadsCountQuery = "UPDATE forums SET threads = threads + 1 WHERE slug = ?";
-        static final String  getThreadsByForumQuery = "SELECT u.nickname, t.created, f.slug as f_slug, t.id, t.message, t.slug as t_slug, t.title, t.votes " +
+
+        static final String updateThreadsCountSQL = "UPDATE forums SET threads = threads + 1 WHERE slug = ?";
+
+        static final String getForumThreadsSQL = "SELECT u.nickname, t.created, f.slug as f_slug, t.id, t.message, t.slug as t_slug, t.title, t.votes " +
                 "FROM threads t " +
                 "  JOIN users u ON (t.user_id = u.id)" +
                 "  JOIN forums f ON (t.forum_id = f.id) " +
                 "  WHERE f.slug = ?";
-        static final String getUsersByForumQuery = "SELECT u.about, u.email, u.fullname, u.nickname " +
+
+        static final String getForumUsersSQL = "SELECT u.about, u.email, u.fullname, u.nickname " +
                 "FROM users u " +
                 "WHERE u.id IN (" +
                 "  SELECT user_id " +
                 "  FROM forum_users " +
                 "  WHERE forum_id = ?" +
                 ")";
-        static final String countForumsQuery = "SELECT COUNT(*) FROM forums";
-        static final String clearTableQuery = "DELETE FROM forums";
 
+        static final String countForumsSQL = "SELECT COUNT(*) FROM forums";
+
+        static final String clearTableSQL = "DELETE FROM forums";
     }
+
     public ForumJDBC(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void create(String username, String slug, String title) {
-        getJdbcTemplate().update(ForumQueries.createForumQuery, username, slug, title);
+    public void insertForum(String username, String slug, String title) {
+        getJdbcTemplate().update(ForumSQL.insertForumSQL, username, slug, title);
     }
 
     @Override
-    public ForumView getBySlug(String slug) {
-        return getJdbcTemplate().queryForObject(ForumQueries.getForumQuery, new Object[]{slug}, readForum);
+    public ForumView getForum(String slug) {
+        return getJdbcTemplate().queryForObject(ForumSQL.getForumSQL, new Object[]{slug}, BaseJDBC::readForum);
     }
 
     @Override
-    public List<ThreadView> getAllThreads(String slug, Integer limit, String since, Boolean desc) {
-        final StringBuilder sql = new StringBuilder(ForumQueries.getThreadsByForumQuery);
+    public List<ThreadView> getForumThreads(String slug, Integer limit, String since, Boolean desc) {
+        final StringBuilder sql = new StringBuilder(ForumSQL.getForumThreadsSQL);
         final List<Object> args = new ArrayList<>();
         args.add(slug);
         if (since != null) {
@@ -66,13 +72,13 @@ public class ForumJDBC extends BaseJDBC implements Forum{
         sql.append(desc == Boolean.TRUE ? " DESC" : "");
         sql.append(" LIMIT ?");
         args.add(limit);
-        return getJdbcTemplate().query(sql.toString(), args.toArray(new Object[args.size()]), readThread);
+        return getJdbcTemplate().query(sql.toString(), args.toArray(new Object[args.size()]), BaseJDBC::readThread);
     }
 
     @Override
-    public List<UserView> getAllUsers(String slug, Integer limit, String since, Boolean desc) {
+    public List<UserView> getForumUsers(String slug, Integer limit, String since, Boolean desc) {
         final Integer forumId = getJdbcTemplate().queryForObject("SELECT id FROM forums WHERE slug = ?", Integer.class, slug);
-        final StringBuilder sql = new StringBuilder(ForumQueries.getUsersByForumQuery);
+        final StringBuilder sql = new StringBuilder(ForumSQL.getForumUsersSQL);
         final List<Object> args = new ArrayList<>();
         args.add(forumId);
         if (since != null) {
@@ -84,16 +90,16 @@ public class ForumJDBC extends BaseJDBC implements Forum{
         sql.append(desc == Boolean.TRUE ? " DESC" : "");
         sql.append(" LIMIT ?");
         args.add(limit);
-        return getJdbcTemplate().query(sql.toString(), args.toArray(), readUser);
+        return getJdbcTemplate().query(sql.toString(), args.toArray(), BaseJDBC::readUser);
     }
 
     @Override
     public Integer countForums() {
-        return getJdbcTemplate().queryForObject(ForumQueries.countForumsQuery, Integer.class);
+        return getJdbcTemplate().queryForObject(ForumSQL.countForumsSQL, Integer.class);
     }
 
     @Override
-    public void clear() {
-        getJdbcTemplate().execute(ForumQueries.clearTableQuery);
+    public void clearForumsTable() {
+        getJdbcTemplate().execute(ForumSQL.clearTableSQL);
     }
 }

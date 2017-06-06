@@ -17,19 +17,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/post/{id}")
-public class PostController extends BaseController{
-
+public class PostController extends BaseController {
     @RequestMapping(value = "/details", produces = MediaType.APPLICATION_JSON_VALUE)
     public final ResponseEntity<PostDetailsView> viewForum(
             @RequestParam(value = "related", required = false) String[] related,
             @PathVariable("id") final Integer id
     ) {
-        final PostDetailsView post;
-        try {
-            post = this.post.detailsView(id, related);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+        final PostDetailsView post = this.post.getPostDetailed(id, related);
         return ResponseEntity.status(HttpStatus.OK).body(post);
     }
 
@@ -41,11 +35,7 @@ public class PostController extends BaseController{
             @RequestBody PostView post,
             @PathVariable("id") final Integer id
     ) {
-        try {
-            post = post.getMessage() != null ? this.post.update(post.getMessage(), id) : this.post.getById(id);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+        post = post.getMessage() != null ? this.post.updatePost(post.getMessage(), id) : this.post.getPostById(id);
         return ResponseEntity.status(HttpStatus.OK).body(post);
     }
 }

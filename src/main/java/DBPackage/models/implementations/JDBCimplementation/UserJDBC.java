@@ -13,33 +13,29 @@ import java.util.List;
  */
 @Service
 public class UserJDBC extends BaseJDBC implements User {
+    static class UserSQL {
+        static final String insertUserSQL = "INSERT INTO users (about, email, fullname, nickname) VALUES(?, ?, ?, ?)";
 
-    public static class UserQueries {
-        public static final String createUserQuery = "INSERT INTO users (about, email, fullname, nickname) VALUES(?, ?, ?, ?)";
+        static final String getUserSQL = "SELECT * FROM users WHERE nickname = ? OR email = ?";
 
-        public static final String findUserQuery = "SELECT * FROM users WHERE nickname = ? OR email = ?";
+        static final String getUserIdSQL = "SELECT id FROM users WHERE nickname = ?";
 
-        public static final String findUserIdQuery ="SELECT id FROM users WHERE nickname = ?";
+        static final String countUsersSQL = "SELECT COUNT(*) FROM users";
 
-        public static final String updateUserVoteQuery="UPDATE users SET thread_id = ?, voice = ? WHERE nickname = ?";
-
-        public static final String countUsersQuery = "SELECT COUNT(*) FROM users";
-
-        public static final String clearTableQuery= "DELETE FROM users";
+        static final String clearTableSQL = "DELETE FROM users";
     }
-
 
     public UserJDBC(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void create(final String about, final String email, final String fullname, final String nickname) {
-        getJdbcTemplate().update(UserQueries.createUserQuery, about, email, fullname, nickname);
+    public void insertUser(final String about, final String email, final String fullname, final String nickname) {
+        getJdbcTemplate().update(UserSQL.insertUserSQL, about, email, fullname, nickname);
     }
 
     @Override
-    public void update(final String about, final String email, final String fullname, final String nickname) {
+    public void updateUser(final String about, final String email, final String fullname, final String nickname) {
         final StringBuilder sql = new StringBuilder("UPDATE users SET");
         final List<Object> args = new ArrayList<>();
         if (about != null) {
@@ -63,22 +59,22 @@ public class UserJDBC extends BaseJDBC implements User {
     }
 
     @Override
-    public UserView findSingleByNickOrMail(final String nickname, final String email) {
-        return getJdbcTemplate().queryForObject(UserQueries.findUserQuery, new Object[]{nickname, email}, readUser);
+    public UserView getUser(final String nickname, final String email) {
+        return getJdbcTemplate().queryForObject(UserSQL.getUserSQL, new Object[]{nickname, email}, BaseJDBC::readUser);
     }
 
     @Override
-    public List<UserView> findManyByNickOrMail(final String nickname, final String email) {
-        return getJdbcTemplate().query(UserQueries.findUserQuery, new Object[]{nickname, email}, readUser);
+    public List<UserView> getUsers(final String nickname, final String email) {
+        return getJdbcTemplate().query(UserSQL.getUserSQL, new Object[]{nickname, email}, BaseJDBC::readUser);
     }
 
     @Override
-    public Integer count() {
-        return getJdbcTemplate().queryForObject(UserQueries.countUsersQuery, Integer.class);
+    public Integer countUsers() {
+        return getJdbcTemplate().queryForObject(UserSQL.countUsersSQL, Integer.class);
     }
 
     @Override
-    public void clear() {
-        getJdbcTemplate().execute(UserQueries.clearTableQuery);
+    public void clearUsersTable() {
+        getJdbcTemplate().execute(UserSQL.clearTableSQL);
     }
 }

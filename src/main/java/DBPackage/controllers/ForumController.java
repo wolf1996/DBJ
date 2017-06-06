@@ -20,8 +20,7 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping(value = "api/forum")
-public final class ForumController extends BaseController{
-
+public final class ForumController extends BaseController {
     @RequestMapping(value = "/create",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_VALUE,
@@ -30,13 +29,11 @@ public final class ForumController extends BaseController{
             @RequestBody final ForumView forum
     ) {
         try {
-            this.forum.create(forum.getUser(), forum.getSlug(), forum.getTitle());
+            this.forum.insertForum(forum.getUser(), forum.getSlug(), forum.getTitle());
         } catch (DuplicateKeyException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.forum.getBySlug(forum.getSlug()));
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.forum.getForum(forum.getSlug()));
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.forum.getBySlug(forum.getSlug()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(this.forum.getForum(forum.getSlug()));
     }
 
     @RequestMapping(value = "/{slug}/create",
@@ -49,12 +46,10 @@ public final class ForumController extends BaseController{
     ) {
         final String threadSlug = thread.getSlug();
         try {
-            thread = this.thread.create(thread.getAuthor(), thread.getCreated(), slug,
+            thread = this.thread.insertThread(thread.getAuthor(), thread.getCreated(), slug,
                     thread.getMessage(), thread.getSlug(), thread.getTitle());
         } catch (DuplicateKeyException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getByIdOrSlug(threadSlug));
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(this.thread.getThread(threadSlug));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(thread);
     }
@@ -63,12 +58,7 @@ public final class ForumController extends BaseController{
     public final ResponseEntity<ForumView> viewForum(
             @PathVariable("slug") final String slug
     ) {
-        final ForumView forum;
-        try {
-            forum = this.forum.getBySlug(slug);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+        final ForumView forum = this.forum.getForum(slug);
         return ResponseEntity.status(HttpStatus.OK).body(forum);
     }
 
@@ -80,12 +70,8 @@ public final class ForumController extends BaseController{
             @RequestParam(value = "desc", required = false) final Boolean desc,
             @PathVariable("slug") final String slug
     ) {
-        try {
-            final ForumView forum = this.forum.getBySlug(slug);
-        } catch (DataAccessException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(this.forum.getAllThreads(slug, limit, since, desc));
+        this.forum.getForum(slug);
+        return ResponseEntity.status(HttpStatus.OK).body(this.forum.getForumThreads(slug, limit, since, desc));
     }
 
     @RequestMapping(value = "/{slug}/users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -95,11 +81,7 @@ public final class ForumController extends BaseController{
             @RequestParam(value = "desc", required = false) final Boolean desc,
             @PathVariable("slug") final String slug
     ) {
-        try {
-        final ForumView forum = this.forum.getBySlug(slug);
-    } catch (DataAccessException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    }
-        return ResponseEntity.status(HttpStatus.OK).body(this.forum.getAllUsers(slug, limit, since, desc));
+        this.forum.getForum(slug);
+        return ResponseEntity.status(HttpStatus.OK).body(this.forum.getForumUsers(slug, limit, since, desc));
     }
 }

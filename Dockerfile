@@ -65,4 +65,4 @@ ENV PGPASSWORD docker
 CMD service postgresql start &&\
     cd $WORK/ &&\
     psql -h localhost -U docker -d docker -f schema.sql &&\
-    gunicorn -w 2 -b :5000 main:app --worker-class=meinheld.gmeinheld.MeinheldWorker --timeout 9999
+    gunicorn -w 4 -b 0.0.0.0:5000 main:app --worker-class=meinheld.gmeinheld.MeinheldWorker --timeout 9999

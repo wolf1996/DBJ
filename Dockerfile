@@ -20,6 +20,7 @@ RUN pip3 install psycopg2
 RUN pip3 install gunicorn
 RUN pip3 install flask
 RUN pip3 install ujson
+RUN pip3 install meinheld
 
 USER postgres
 
@@ -64,4 +65,4 @@ ENV PGPASSWORD docker
 CMD service postgresql start &&\
     cd $WORK/ &&\
     psql -h localhost -U docker -d docker -f schema.sql &&\
-    gunicorn -w 4 -b :5000 main:app
+    gunicorn -w 4 -b :5000 main:app --worker-class=meinheld.gmeinheld.MeinheldWorker

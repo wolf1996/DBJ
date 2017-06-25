@@ -21,6 +21,7 @@ RUN pip3 install gunicorn
 RUN pip3 install flask
 RUN pip3 install gevent
 RUN pip3 install ujson
+RUN pip3 install meinheld
 
 USER postgres
 
@@ -65,4 +66,4 @@ ENV PGPASSWORD docker
 CMD service postgresql start &&\
     cd $WORK/ &&\
     psql -h localhost -U docker -d docker -f schema.sql &&\
-    gunicorn main:app -k gevent -w 4 -b :5000 --threads=2
+    gunicorn main:app -k meinheld.gmeinheld.MeinheldWorker -w 4 -b :5000 —threads=2

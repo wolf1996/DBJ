@@ -20,6 +20,7 @@ RUN pip3 install psycopg2
 RUN pip3 install gunicorn
 RUN pip3 install flask
 RUN pip3 install gevent
+RUN pip3 install ujson
 
 USER postgres
 
